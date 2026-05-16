@@ -18,7 +18,7 @@ def watch_session(session_id: str):
     print(f"\n--- Watching session {session_id} ---")
     seen = 0
     while True:
-        history = queue_store.sessions[session_id]["history"]
+        history = queue_store.get_history(session_id)
         if len(history) > seen:
             for entry in history[seen:]:
                 print(f"\n> {entry['command']}")
